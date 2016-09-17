@@ -281,6 +281,25 @@ exports.cancelBlueCode = function(payload) {
   });
 };
 
+//khaled
+exports.cancelAnyCall = function(payload) {
+
+  CallModel.find({IP:payload.IP, StopTime:""}).exec(function(err, data) {
+    if (err) {
+      // tell front-end an error occured
+    } else if (_.isEmpty(data)) {
+      // an ip is press the presence but it is not in calls table
+    } else {
+      for(var i =0; i< data.length; i++){
+	//console.log(data[i]);
+     	 data[i].StopTime = date().formattedTime;
+     	 data[i].DiffTime = date().DiffTime(data[i].StartTime, data[i].StopTime);
+     	 data[i].save();
+	}
+    }
+  });
+};
+
 
 // Mamshad
 
@@ -365,7 +384,7 @@ exports.getAllPendingCalls = function(cb){
   
 
   CallModel.find({"StopTime": ""}, function(err, calls) {
-      
+	
       var myIP = new Array();
       for (var i = calls.length - 1; i >= 0; i--) {
                  
@@ -412,7 +431,7 @@ exports.getAllCallHistory = function(cb){
   var myCallDetails = [];
   
 
-  CallModel.find({}, function(err, calls) {
+  CallModel.find().sort({_id:-1}).limit(1000).exec( function(err, calls) {
       
       var myIP = new Array();
       for (var i = calls.length - 1; i >= 0; i--) {

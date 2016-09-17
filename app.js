@@ -6,12 +6,60 @@ var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
 
+//mail helper class
+var helper = require('sendgrid').mail;
+var from_email = new helper.Email('md.khaled.eee@gmail.com');
+var to_email = new helper.Email('tokyo_emb@yahoo.com');
+var subject = 'Hello World from the SendGrid Node.js Library!';
+var subjectDB = 'Database Notification from NCS 7th floor';
+var content = new helper.Content('text/plain', 'Ncs App just started!');
+var contentDB = new helper.Content('text/plain', 'Database is disconeected');
+var mail = new helper.Mail(from_email, subject, to_email, content);
+var mailDB = new helper.Mail(from_email, subjectDB, to_email, contentDB);
+ 
+var sg = require('sendgrid')('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');
+
+
+var request = sg.emptyRequest({
+  method: 'POST',
+  path: '/v3/mail/send',
+  body: mail.toJSON(),
+});
+
+var requestDB = sg.emptyRequest({
+  method: 'POST',
+  path: '/v3/mail/send',
+  body: mailDB.toJSON(),
+});
+
+sg.API(request, function(error, response) {
+  console.log(response.statusCode);
+  console.log(response.body);
+  console.log(response.headers);
+});
+
 //mongodb connection
 var mongoURI = 'mongodb://ncsV1:ncsV1@localhost:27017/ncsV1';
-var db = mongoose.connect(mongoURI).connection;
+var db = mongoose.connect(mongoURI,{ server: { reconnectTries: Number.MAX_VALUE } }).connection;
 db.on('error', function(err){console.log(err.message); });
+
 db.once('open', function(){
 	console.log("mongodb connection open");
+});
+
+db.on('disconnected',function(ref){
+	console.log('disconnected connection');
+	//send mail that database is disconnected
+	sg.API(requestDB, function(error, response) {
+  	   console.log(response.statusCode);
+ 	   console.log(response.body);
+ 	   console.log(response.headers);
+	});
+
+});
+
+db.on('disconnect', function(err){
+	console.log('Error....disconnect',err);
 });
 
 //Routes
