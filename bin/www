@@ -1,0 +1,237 @@
+#!/usr/bin/env node
+
+/**
+ * Module dependencies.
+ */
+
+var app = require('../app');
+var debug = require('debug')('NCSAppV0.0.1:server');
+var http = require('http');
+var callsController = require('../controllers/callsController');
+var deviceController = require('../controllers/deviceController');
+var _ = require('underscore');
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '8000');
+var IP = '192.168.1.210';
+
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+var server = http.createServer(app);
+var io = require('socket.io')(server);  //this is for socket IO for server
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port, IP);
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Socket.IO communication
+ */
+/*payload = {
+  IP:IP, //getting from network interfaces file IP='192.168.1.240'
+  CallType: 'Normal'
+}*/
+
+io.on('connection', function (socket) {
+
+  //console.log("User Connected");
+  socket.emit('connected', { status: 'connected with Server', socketId: socket.id });
+
+  socket.on('payload', function(payload){
+
+    console.log("IP: "+payload.IP+" (socket id: "+payload.SocketID+") Connected");     
+
+    deviceController.updateDeviceSocketId(payload, function(err, updatedDevice){
+      
+      if (err) {
+        // disconnect the device so that when it reconnects it gets its updated SocketID
+        console.log(err);
+        
+
+      } else if (_.isEmpty(updatedDevice)) {
+        // tell front-end a IP is calling but not available in database send();
+        //console.log(device);
+      } else {
+        //means device exists in database so device status needs to be transmitted to BBB
+        // callsController.getCallStatus(updatedDevice.IP, function(err, deviceStatus){
+        //    socket.emit('deviceStatus', {'deviceStatus' : deviceStatus});
+        // });
+        
+        callsController.getCallStatus(payload.IP, function(err, deviceStatus){
+          console.log("device status " + deviceStatus);
+          socket.emit('deviceStatus', {'deviceStatus' : deviceStatus});
+        });
+        
+      }
+  });
+
+  });
+
+
+  socket.on('Normal', function (payload, cb) {
+    //console.log(payload);
+    cb('confirmed Normal Call'); //cb means call back. this data is sent back to beaglebone
+    //have to insert data to database calls table and modify the payload
+    payload.SocketID = socket.id; // assign soket id for tracking device
+    
+    //callsController.createcallsBBB(payload);// creates a row in calls table in database
+
+    callsController.createcallsBBB(payload, function(err,result){
+
+      //console.log('reply: '+result);
+      if(result === 1){
+        io.emit('Refresh Device Table', result);
+      }
+      
+    });
+    
+   
+    //calls table updated the payload and exported it
+    //have to fetch data from database device table and modify the payload
+    //console.log(callsController.payload);
+
+    callsController.fetchBBBinfo(callsController.payload,function(err,result){
+      io.emit('Normal Alert', result); //this emit is transmitted to all clients
+    });
+  });
+
+  socket.on('Presence', function (payload, cb) {
+    console.log(payload);
+    cb('confirmed Presence');
+    io.emit('Presence Alert', payload);
+    callsController.nursePresence(payload);
+  });
+
+  socket.on('Emergency', function (payload, cb) {
+    console.log(payload);
+    cb('confirmed Emergency Call');
+    callsController.createcallsBBB(payload);// creates a row in calls table in database
+
+
+    //calls table updated the payload and exported it
+    //have to fetch data from database device table and modify the payload
+    //console.log(callsController.payload);
+    callsController.fetchBBBinfo(callsController.payload,function(err,result){
+      io.emit('Emergency Alert', result); //this emit is transmitted to all clients
+    });
+  });
+
+  socket.on('BlueCode', function (payload, cb) {
+    console.log(payload);
+    cb('confirmed BlueCode Call');
+    callsController.cancelEmergency(payload);
+    callsController.createcallsBBB(payload);
+    callsController.fetchBBBinfo(callsController.payload,function(err,result){
+      io.emit('BlueCode Alert', result); //this emit is transmitted to all clients
+    });
+  });
+
+  socket.on('Cancel Emergency', function (payload, cb) {
+    console.log(payload);
+    cb('confirmed Cancel Emergency Call');
+    callsController.cancelEmergency(payload);
+    io.emit('Cancel BlueCode Alert', payload);
+  });
+
+  socket.on('Cancel BlueCode', function (payload, cb) {
+    console.log(payload);
+    cb('confirmed Cancel BlueCode Call');
+    callsController.cancelBlueCode(payload);
+    io.emit('Cancel BlueCode Alert', payload);
+  });
+
+  
+  socket.on('disconnect', function () {
+
+    console.log('user disconnected....');
+      
+    callsController.showDeviceDisconnectedAlert(socket.id, function(err, result){
+
+      if(result){
+        io.emit('Device Disconnected Alert', result.IP);
+      }      
+
+    });
+  });
+});
+
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
+
+exports.sendStatusToDevice = function(ip, status) {
+
+  var state = {
+      IP: ip,
+      State: parseInt(status)
+  };
+
+  io.sockets.emit('deviceState', state);
+}

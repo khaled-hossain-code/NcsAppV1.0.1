@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>NCS | Call History</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" name="viewport">
+    <!-- Bootstrap 3.3.5 -->
+    <link rel="stylesheet" href="/resource/bootstrap/css/bootstrap.min.css">
+    <!-- Font Awesome -->
+    <!-- <link rel="stylesheet" href="resource/others/font-awesome.min.css"> -->
+	  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.4.0/css/font-awesome.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="/resource/others/ionicons.min.css">
+	  <!-- DataTables -->
+    <link rel="stylesheet" href="/resource/plugins/datatables/dataTables.bootstrap.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="/resource/dist/css/AdminLTE.min.css">
+    
+    <link rel="stylesheet" href="/resource/dist/css/skins/_all-skins.min.css">
+    <!-- HTML5 Shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!-- WARNING: Respond.js doesn't work if you view the page via file:// -->
+    <!--[if lt IE 9]>
+        <script src="/resource/others/html5shiv.min.js"></script>
+        <script src="/resource/others/respond.min.js"></script>
+    <![endif]-->
+  </head>
+  <body class="hold-transition skin-blue sidebar-mini">
+    <div class="wrapper">
+      <% include templates/top_nav_bar.ejs %>
+      <!-- Left side column. contains the logo and sidebar -->
+      <% include templates/left_nav_bar.ejs %>
+      <!-- Content Wrapper. Contains page content -->
+      <div class="content-wrapper">
+        <!-- Content Header (Page header) -->
+        <section class="content-header">
+          <h1>Calls</h1>
+          <ol class="breadcrumb">
+            <li><a href="#"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li class="active">Calls</li>
+          </ol>
+        </section>
+        <!-- Main content -->
+        <section class="content">
+			<div class="box box-primary">
+          <div class="box-header">
+            <!-- <h3 class="box-title">Calling History</h3> -->
+          </div><!-- /.box-header -->
+          
+          <div class="box-body">            
+            <table id="callListTable" class="table table-bordered table-striped">
+              <thead>
+                <tr>                  
+                  <th class="text-center">Bed Number</th>
+			            <th class="text-center">Room Number</th>
+                  <th class="text-center">Room Type</th>
+                  <th class="text-center">Floor</th>
+                  <th class="text-center">Call Type</th>
+                  <th class="text-center">Call Date</th>
+			            <th class="text-center">Call Time</th>
+			            <th class="text-center">Timer</th>
+                </tr>
+              </thead>     
+					    <tbody id="callTableBody">            
+               
+              <% for(var j = 0; j < data.length;  j++) {
+                var myIP = data[j].IP;
+                var IP = myIP.split('.').join('_');                                 
+              %>
+                    <tr id="<%= IP %>">                      
+                      <td class="text-center"><%= data[j].BedNumber %></td>
+                      <td class="text-center"><%= data[j].RoomNumber %></td>
+                      <td class="text-center"><%= data[j].RoomType %></td>
+                      <td class="text-center"><%= data[j].Floor %></td>
+                      <td class="text-center">
+                      <% if(data[j].CallType == 'Normal'){ %>
+                        <small class="label label-warning"><%= data[j].CallType %></span>
+                      <% }else if(data[j].CallType == 'Emergency'){ %>
+                        <small class="label label-danger"><%= data[j].CallType %></span>
+                      <% }else if(data[j].CallType == 'BlueCode'){ %>
+                        <small class="label label-primary"><%= data[j].CallType %></span>
+                      <% }else if(data[j].CallType == 'Toilet'){ %>
+                        <small class="label label-info"><%= data[j].CallType %></span>
+                      <% }else{ %>
+                        <small class="label label-warning"><%= data[j].CallType %></span>
+                      <% } %>
+                      </td>
+                      <td class="text-center"><%= data[j].CallDate %></td>
+                      <td class="text-center"><%= data[j].StartTime %></td>
+                      <td class="text-center" id="<%= j %>">
+
+                      <% 
+                        if(data[j].StopTime == null){
+
+                          var dt = new Date();
+                          var currentTime = dt.getHours() + ":" + dt.getMinutes() + ":" + dt.getSeconds();
+
+                          var startTime = data[j].StartTime; //"00:00:02";
+                          var endTime = currentTime; //"00:00:03";
+
+                          var startDate = new Date("1/1/1970 " + startTime).getTime();
+                          var endDate = new Date("1/1/1970 " + endTime).getTime();
+                          var timerStartPoint =  (endDate-startDate)/1000;
+
+                          console.log(data[j].StartTime);
+                          console.log(currentTime);
+                          console.log(timerStartPoint);
+                          
+                      %>                      
+
+                          <script src="/resource/plugins/jQuery/jQuery-2.1.4.min.js"></script>
+                          <script>        
+                            
+                            $(function () {
+                              var stopTimerDivId = <%= j %>; 
+                              var timerStartPoint = <%= timerStartPoint %>; 
+                              var timerStartPoint = Math.abs(timerStartPoint); 
+                              $('#'+stopTimerDivId+'').timer({
+                                  seconds: timerStartPoint
+                              });
+        
+                            });
+                          </script>
+                          
+                      <%
+                      
+                        }
+                      %>
+                       
+
+                      </td>
+                    </tr>
+              <% } %>   
+                            
+              </tbody>
+				</table>
+			</div><!-- /.box-body -->
+        </div><!-- /.box -->
+
+        </section><!-- /.content -->
+      </div><!-- /.content-wrapper -->
+      <% include templates/bottom_nav_bar.ejs %>      
+      <!-- Add the sidebar's background. This div must be placed immediately after the control sidebar -->
+      <div class="control-sidebar-bg"></div>
+    </div><!-- ./wrapper -->
+
+    <!-- jQuery 2.1.4 -->
+    <!--<script src="/resource/plugins/jQuery/jQuery-2.1.4.min.js"></script>-->
+    <script src="/jquery/dist/jquery.min.js"></script>
+    <!-- Bootstrap 3.3.5 -->
+    <script src="/resource/bootstrap/js/bootstrap.min.js"></script>
+	  <!-- DataTables -->
+    <script src="/resource/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="/resource/plugins/datatables/dataTables.bootstrap.min.js"></script>
+    <!-- FastClick -->
+    <script src="/resource/plugins/fastclick/fastclick.min.js"></script>
+    <!-- App -->
+    <script src="/resource/dist/js/app.min.js"></script>
+    <!-- for demo purposes -->
+    <script src="/resource/dist/js/demo.js"></script>	  	
+  	<script src="/socket.io/socket.io.js"></script>
+  	<script src="/javascript/client-app.js"></script>
+    <script src="/timer.jquery/dist/timer.jquery.js"></script>
+    <!--<script src="/underscore/underscore.js"></script>-->
+    <script src="/ion-sound/js/ion.sound.min.js"></script>
+
+    	
+	<!-- page script -->
+    <script>
+      $(function () {
+  		  $("#callListTable").DataTable({
+  			  "paging": true,
+  			  "lengthChange": false,
+  			  "searching": false,
+  			  "ordering": false,
+  			  "info": false,
+  			  "autoWidth": true
+  		  }); 
+
+        ion.sound({
+            sounds: [
+                {name: "bell_ring"}
+            ],
+
+            // main config
+            path: "sound/",
+            preload: true,
+            multiplay: true,
+            volume: 1
+        });  
+        
+      });
+
+      function playAlertSound (id) {
+        
+        if(id == 1){
+          // just change the sound name and add the 3 file format in the sound folder
+          ion.sound.play("bell_ring");
+        }else if(id == 2){
+          ion.sound.play("bell_ring");
+        }else if(id == 3){
+          ion.sound.play("bell_ring");
+        }else{
+
+        }
+
+        
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,28 @@
+{
+  "name": "ncsappv0.0.1",
+  "description": "nurse call system alpha version",
+  "main": "www",
+  "authors": [
+    "Khaled Hossain <md.khaled.eee@gmail.com>"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "ncs"
+  ],
+  "homepage": "localhost:3000",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bootstrap": "^3.3.6",
+    "jquery": "^3.1.0",
+    "timer.jquery": "^0.6.4",
+    "ion-sound": "ionsound#^3.0.7",
+    "parsleyjs": "^2.4.4"
+  }
+}
