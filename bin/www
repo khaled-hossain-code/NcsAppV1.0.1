@@ -85,6 +85,7 @@ io.on('connection', function (socket) {
     payload.SocketID = socket.id; // assign soket id for tracking device
     
     //callsController.createcallsBBB(payload);// creates a row in calls table in database
+    callsController.cancelAnyCall(payload);
 
     callsController.createcallsBBB(payload, function(err,result){
 
@@ -115,6 +116,7 @@ io.on('connection', function (socket) {
   socket.on('Emergency', function (payload, cb) {
     console.log(payload);
     cb('confirmed Emergency Call');
+    callsController.cancelAnyCall(payload);
     callsController.createcallsBBB(payload);// creates a row in calls table in database
 
 
@@ -129,7 +131,7 @@ io.on('connection', function (socket) {
   socket.on('BlueCode', function (payload, cb) {
     console.log(payload);
     cb('confirmed BlueCode Call');
-    callsController.cancelEmergency(payload);
+    callsController.cancelAnyCall(payload);
     callsController.createcallsBBB(payload);
     callsController.fetchBBBinfo(callsController.payload,function(err,result){
       io.emit('BlueCode Alert', result); //this emit is transmitted to all clients
