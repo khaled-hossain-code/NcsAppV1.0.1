@@ -156,40 +156,11 @@ exports.createcallsBBB = function(payload, cb) {
     if (err) {
       // tell front-end an error occured with payload.IP send(err);
       console.log(err);
-      //cb(err,{});
+      return cb(err,null);
     } else if (_.isEmpty(device)) {
 
       console.log('device not found in DB');
-      // insert device details to database id not found in DB
-      
-      // mamshad
-      // --start--
-      // deviceData =  {
-      //     IP: payload.IP,
-      //     Floor: '',        
-      //     RoomType: '',
-      //     RoomNumber: '',
-      //     BedNumber: '',
-      //     Status: 1,
-      //     SocketID: payload.SocketID,        
-      //     createdOn: date().formatted,
-      //     updatedOn:  date().formatted  
-      // }; 
-
-      // var deviceObj = new Device(deviceData);
-
-      // deviceObj.save(function (err) {
-      //   if (err) {
-      //     console.log(err); // tell front-end an error occured while saving to database
-      //     //cb(err,{});
-      //   } else {
-      //     //console.log('done');
-      //     //return 1;
-      //     cb(err,1);
-      //   }
-      // });
-      // --end--
-
+      return cb(null,[]);
 
     } else {
 
@@ -205,7 +176,7 @@ exports.createcallsBBB = function(payload, cb) {
           console.log('calls controller: 202. test');
         }
       });
-      //cb(err,0);
+      return cb(null,1);
     }
   });
 };
@@ -230,21 +201,21 @@ exports.nursePresence = function(payload) {
 
 //for Front-End
 exports.fetchBBBinfo = function(payload,cb) {
-  //console.log(payload);
+  console.log(payload);
   //Device.findOne({$and:[{IP: payload.IP},{"Status":1},{"Floor":{$ne:""}},{"RoomNumber":{$ne:""}},{"BedNumber":{$ne:""}}]}, function (err, device) {
   Device.findOne({$and:[{IP: payload.IP},{"Status":1},{"Floor":{$ne:""}},{"RoomNumber":{$ne:""}},{"BedNumber":{$ne:""}}]}, function (err, device) {
     if (err) {
       // tell front-end an error occured with payload.IP send(err);
-      return {};
+      return cb(err,{});
 
     } else if (_.isEmpty(device)) {
       // tell front-end a IP is calling but not available in database send();
-      return {};
+      return cb(null,{});
     } else {
       var newDevice = JSON.parse(JSON.stringify(device)); // cloning an object
       var newpayload = JSON.parse(JSON.stringify(payload));
       newpayload = _.extend(newpayload, newDevice);
-      cb({},newpayload);
+      cb(null,newpayload);
       }
   });
 };
@@ -298,7 +269,7 @@ exports.cancelAnyCall = function(payload,cb) {
      	  data[i].DiffTime = date().DiffTime(data[i].StartTime, data[i].StopTime);
      	  data[i].save();
 	    }
-      return cb(null, 1);
+      return cb(null, data);
     }
   });
 };
