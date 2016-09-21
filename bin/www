@@ -10,13 +10,14 @@ var http = require('http');
 var callsController = require('../controllers/callsController');
 var deviceController = require('../controllers/deviceController');
 var _ = require('underscore');
-
+var async = require('async');
 /**
  * Get port from environment and store in Express.
  */
 
 var port = normalizePort(process.env.PORT || '8000');
 var IP = '192.168.1.210';
+//var IP = '192.168.1.6';
 
 app.set('port', port);
 
@@ -84,26 +85,40 @@ io.on('connection', function (socket) {
     //have to insert data to database calls table and modify the payload
     payload.SocketID = socket.id; // assign soket id for tracking device
     
-    //callsController.createcallsBBB(payload);// creates a row in calls table in database
-    callsController.cancelAnyCall(payload);
-
-    callsController.createcallsBBB(payload, function(err,result){
-
-      //console.log('reply: '+result);
-      if(result === 1){
-        io.emit('Refresh Device Table', result);
-      }
-      
-    });
-    
+    async.series({
+      one: function(cb) {
+        callsController.cancelAnyCall(payload, function(err, result){
+                if(result === 1){ 
+                  io.emit('Cancel BlueCode Alert', payload); //all call type cancel/presence is same 
+                }
+                cb(null,'one');
+          });
+        },
+     two: function(cb){
+        callsController.createcallsBBB(payload, function(err,result){
+              //console.log('reply: '+result);
+              if(result === 1){
+                  io.emit('Refresh Device Table', result);
+              }
+              cb(null,'two');
+            });
+        },
+      three: function(cb){
+        callsController.fetchBBBinfo(callsController.payload,function(err,result){
+            io.emit('Normal Alert', result); //this emit is transmitted to all clients
+            cb(null,'three');
+        });
+      }  
+      }, function(err, results) {
+          console.log(results);
+          // results is now equal to: {one: 1, two: 2}
+  });     
    
     //calls table updated the payload and exported it
     //have to fetch data from database device table and modify the payload
     //console.log(callsController.payload);
 
-    callsController.fetchBBBinfo(callsController.payload,function(err,result){
-      io.emit('Normal Alert', result); //this emit is transmitted to all clients
-    });
+
   });
 
   socket.on('Presence', function (payload, cb) {
@@ -116,7 +131,7 @@ io.on('connection', function (socket) {
   socket.on('Emergency', function (payload, cb) {
     console.log(payload);
     cb('confirmed Emergency Call');
-    callsController.cancelAnyCall(payload);
+   // callsController.cancelAnyCall(payload);
     callsController.createcallsBBB(payload);// creates a row in calls table in database
 
 
@@ -131,7 +146,8 @@ io.on('connection', function (socket) {
   socket.on('BlueCode', function (payload, cb) {
     console.log(payload);
     cb('confirmed BlueCode Call');
-    callsController.cancelAnyCall(payload);
+    callsController.cancelEmergency(payload);
+   // callsController.cancelAnyCall(payload);
     callsController.createcallsBBB(payload);
     callsController.fetchBBBinfo(callsController.payload,function(err,result){
       io.emit('BlueCode Alert', result); //this emit is transmitted to all clients

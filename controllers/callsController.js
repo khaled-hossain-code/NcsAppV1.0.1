@@ -282,20 +282,23 @@ exports.cancelBlueCode = function(payload) {
 };
 
 //khaled
-exports.cancelAnyCall = function(payload) {
-
+exports.cancelAnyCall = function(payload,cb) {
+	
   CallModel.find({IP:payload.IP, StopTime:""}).exec(function(err, data) {
     if (err) {
       // tell front-end an error occured
+      return cb(err,null);
     } else if (_.isEmpty(data)) {
       // an ip is press the presence but it is not in calls table
+      return cb(null,[]);
     } else {
       for(var i =0; i< data.length; i++){
-	//console.log(data[i]);
-     	 data[i].StopTime = date().formattedTime;
-     	 data[i].DiffTime = date().DiffTime(data[i].StartTime, data[i].StopTime);
-     	 data[i].save();
-	}
+	      //console.log(data[i]);
+     	  data[i].StopTime = date().formattedTime;
+     	  data[i].DiffTime = date().DiffTime(data[i].StartTime, data[i].StopTime);
+     	  data[i].save();
+	    }
+      return cb(null, 1);
     }
   });
 };
