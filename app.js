@@ -17,7 +17,7 @@ var contentDB = new helper.Content('text/plain', 'Database is disconeected');
 var mail = new helper.Mail(from_email, subject, to_email, content);
 var mailDB = new helper.Mail(from_email, subjectDB, to_email, contentDB);
  
-var sg = require('sendgrid')('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');
+var sg = require('sendgrid')('jkjkjljljljlkjlkj');
 
 
 var request = sg.emptyRequest({
