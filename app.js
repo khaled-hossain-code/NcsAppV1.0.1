@@ -5,11 +5,12 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+require('dotenv').config();
 
 //mail helper class
 var helper = require('sendgrid').mail;
-var from_email = new helper.Email('md.khaled.eee@gmail.com');
-var to_email = new helper.Email('tokyo_emb@yahoo.com');
+var from_email = new helper.Email(process.env.FROM_EMAIL);
+var to_email = new helper.Email(process.env.TO_EMAIL);
 var subject = 'Hello World from the SendGrid Node.js Library!';
 var subjectDB = 'Database Notification from NCS 7th floor';
 var content = new helper.Content('text/plain', 'Ncs App just started!');
@@ -17,7 +18,7 @@ var contentDB = new helper.Content('text/plain', 'Database is disconeected');
 var mail = new helper.Mail(from_email, subject, to_email, content);
 var mailDB = new helper.Mail(from_email, subjectDB, to_email, contentDB);
  
-var sg = require('sendgrid')('jkjkjljljljlkjlkj');
+var sg = require('sendgrid')(process.env.SG_API);
 
 
 var request = sg.emptyRequest({
@@ -39,7 +40,8 @@ sg.API(request, function(error, response) {
 });
 
 //mongodb connection
-var mongoURI = 'mongodb://ncsV1:ncsV1@localhost:27017/ncsV1';
+//mongodb://username:password@host:port/database
+var mongoURI = `mongodb://${process.env.DB_USER}:${process.env.DB_PASS}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
 var db = mongoose.connect(mongoURI,{ server: { reconnectTries: Number.MAX_VALUE } }).connection;
 db.on('error', function(err){console.log(err.message); });
 
